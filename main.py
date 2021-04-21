@@ -14,7 +14,7 @@ Configuation
 ===========================================================================
 """
 parser = argparse.ArgumentParser(description="Run SIGN.")
-parser.add_argument('--data_path', nargs='?', default='../data/', help='Input data path')
+parser.add_argument('--data_path', nargs='?', default='./data/', help='Input data path')
 parser.add_argument('--dataset', nargs='?', default='Cora', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
 parser.add_argument('--split', nargs='?', default='full', help='The type of dataset split {public, full, random}')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
