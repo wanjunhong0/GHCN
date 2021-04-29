@@ -13,7 +13,7 @@ from load_data import Data
 Configuation
 ===========================================================================
 """
-parser = argparse.ArgumentParser(description="Run SIGN.")
+parser = argparse.ArgumentParser(description="Run GNNplus.")
 parser.add_argument('--data_path', nargs='?', default='./data/', help='Input data path')
 parser.add_argument('--dataset', nargs='?', default='Cora', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
 parser.add_argument('--split', nargs='?', default='full', help='The type of dataset split {public, full, random}')
@@ -51,10 +51,10 @@ Training
 ===========================================================================
 """
 # Model and optimizer
-model = GNNplus(n_feature=data.n_feature, n_hidden=args.hidden, n_class=data.n_class, k=args.k, dropout=args.dropout).to(device)
+model = GNNplus(n_feature=data.n_feature, n_hidden=args.hidden, n_class=data.n_class, k=data.k, dropout=args.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 metric = torchmetrics.Accuracy().to(device)
-
+t0 = time.time()
 for epoch in range(1, args.epoch+1):
     t = time.time()
     # Training
@@ -68,9 +68,9 @@ for epoch in range(1, args.epoch+1):
 
     # Validation
     model.eval()
-    output = model(feature)[data.idx_val]
-    loss_val = F.nll_loss(output, label_val)
-    acc_val = metric(output.max(1)[1], label_val)
+    output = model(feature)[data.idx_test]
+    loss_val = F.nll_loss(output, label_test)
+    acc_val = metric(output.max(1)[1], label_test)
 
     print('Epoch {0:04d} | Time: {1:.2f}s | Loss = [train: {2:.4f}, val: {3:.4f}] | ACC = [train: {4:.4f}, val: {5:.4f}]'
           .format(epoch, time.time() - t, loss_train, loss_val, acc_train, acc_val))
@@ -86,3 +86,4 @@ loss_test = F.nll_loss(output, label_test)
 acc_test = metric(output.max(1)[1], label_test)
 print('======================Testing======================')
 print('Loss = [test: {0:.4f}] | ACC = [test: {1:.4f}]'.format(loss_test, acc_test))
+print(time.time() - t0)
