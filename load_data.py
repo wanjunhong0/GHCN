@@ -1,5 +1,5 @@
 import torch
-from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import Planetoid, Reddit
 from utils import normalize_adj, sparse_diag
 
 
@@ -14,7 +14,10 @@ class Data():
             split (str): type of dataset split
             k (int) k-hop aggregation
         """
-        data = Planetoid(root=path, name=dataset, split=split)
+        if dataset == 'Reddit':
+            data = Reddit(root=path)
+        else:
+            data = Planetoid(root=path, name=dataset, split=split)
         self.feature = data[0].x
         self.edge = data[0].edge_index
         self.label = data[0].y
@@ -56,12 +59,12 @@ def NodeRank(adjs, k):
 
 
 def NodeTrim(adjs, k):
-    filters = [adjs[0]]
-    for i in range(1, k - 1):
-        filters.append(filters[i - 1] + adjs[i])
-    adj_trimmed = [adjs[0]]
-    for i in range(1, k):
-        adj = eliminate_negative(adjs[i] - filters[i - 1])
+    adj_trimmed = []
+    for i in range(k):
+        adj = adjs[i]
+        for j in range(i):
+            adj = adj - adjs[j]
+        adj = eliminate_negative(adj)
         if adj._nnz() == 0:
             print('{}-hop NodeTrim adj matrix is empty!'.format(i + 1))
             break
