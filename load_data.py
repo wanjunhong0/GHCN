@@ -15,7 +15,7 @@ class Data():
             k (int) k-hop aggregation
         """
         if dataset == 'Reddit':
-            data = Reddit(root=path)
+            data = Reddit(root=path + dataset)
         else:
             data = Planetoid(root=path, name=dataset, split=split)
         self.feature = data[0].x

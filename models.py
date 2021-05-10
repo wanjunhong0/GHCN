@@ -36,6 +36,7 @@ class GNNplus(torch.nn.Module):
             x = F.dropout(x, self.dropout, training=self.training)
             xs.append(x)
         out = torch.sum(torch.stack(xs), dim=0)
+        # out = torch.cat(xs, dim=1)
         out = self.fc(out)
 
         return F.log_softmax(out, dim=1)

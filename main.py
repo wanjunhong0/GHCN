@@ -37,6 +37,7 @@ print('Training on device = {}'.format(device))
 Loading data
 ===========================================================================
 """
+t_started = time.time()
 data = Data(path=args.data_path, dataset=args.dataset, split=args.split, k=args.k)
 print('Loaded {0} dataset with {1} nodes and {2} edges'.format(args.dataset, data.n_node, data.n_edge))
 feature = [i.to(device) for i in data.feature_diffused]
@@ -54,7 +55,8 @@ Training
 model = GNNplus(n_feature=data.n_feature, n_hidden=args.hidden, n_class=data.n_class, k=data.k, dropout=args.dropout).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 metric = torchmetrics.Accuracy().to(device)
-t0 = time.time()
+t_train = time.time()
+
 for epoch in range(1, args.epoch+1):
     t = time.time()
     # Training
@@ -68,9 +70,9 @@ for epoch in range(1, args.epoch+1):
 
     # Validation
     model.eval()
-    output = model(feature)[data.idx_test]
-    loss_val = F.nll_loss(output, label_test)
-    acc_val = metric(output.max(1)[1], label_test)
+    output = model(feature)[data.idx_val]
+    loss_val = F.nll_loss(output, label_val)
+    acc_val = metric(output.max(1)[1], label_val)
 
     print('Epoch {0:04d} | Time: {1:.2f}s | Loss = [train: {2:.4f}, val: {3:.4f}] | ACC = [train: {4:.4f}, val: {5:.4f}]'
           .format(epoch, time.time() - t, loss_train, loss_val, acc_train, acc_val))
@@ -86,4 +88,6 @@ loss_test = F.nll_loss(output, label_test)
 acc_test = metric(output.max(1)[1], label_test)
 print('======================Testing======================')
 print('Loss = [test: {0:.4f}] | ACC = [test: {1:.4f}]'.format(loss_test, acc_test))
-print(time.time() - t0)
+
+print('Training time: {:.2f}'.format(time.time() - t_train))
+print('Total time: {:.2f}'.format(time.time() - t_started))
