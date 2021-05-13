@@ -1,6 +1,6 @@
 import torch
 from torch_geometric.datasets import Planetoid, Reddit
-from utils import normalize_adj, sparse_diag
+from utils import normalize_adj, sparse_diag, eliminate_negative
 
 
 class Data():
@@ -48,8 +48,17 @@ class Data():
 
 
 def NodeRank(adjs, k):
+    """Calculate NodeRank coefficients
+
+    Args:
+        adjs ([torch sparse tensor]): k-hop adj lists
+        k (int) k-hop aggregation
+
+    Returns:
+        torch tensor: NodeRank coefficients for k-hop adj lists
+    """
+    degree = torch.ones(adjs[0].size()[0]).unsqueeze(dim=0).to_sparse()
     adjs = [normalize_adj(i, symmetric=False) for i in adjs]
-    degree = torch.sparse.sum(adjs[0], dim=1).unsqueeze(dim=0)
     node_rank = [torch.sparse.mm(degree, adjs[0])]
     for i in range(1, k):
         node_rank.append(torch.sparse.mm(node_rank[i - 1], adjs[i]))
@@ -57,8 +66,16 @@ def NodeRank(adjs, k):
 
     return node_rank
 
-
 def NodeTrim(adjs, k):
+    """Remove nodes appeared in adjs
+
+    Args:
+        adjs ([torch sparse tensor]): k-hop adj lists
+        k (int) k-hop aggregation
+
+    Returns:
+        [torch sparse tensor]: k-hop adj lists after NodeTrim
+    """
     adj_trimmed = []
     for i in range(k):
         adj = adjs[i]
@@ -71,8 +88,3 @@ def NodeTrim(adjs, k):
         adj_trimmed.append(adj)
 
     return adj_trimmed
-
-
-def eliminate_negative(adj):
-    mask = adj._values() > 0
-    return torch.sparse_coo_tensor(adj._indices()[:, mask], adj._values()[mask], adj.size())

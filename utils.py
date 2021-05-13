@@ -36,3 +36,15 @@ def sparse_diag(vector):
     index = torch.stack([vector._indices()[0], vector._indices()[0]])
 
     return torch.sparse_coo_tensor(index, vector._values(), [n ,n])
+
+def eliminate_negative(adj):
+    """Eliminate negative values in torch sparse tensor
+
+    Args:
+        adj (torch sparse tensor): original sparse matrix
+
+    Returns:
+        (torch sparse tensor): sparse matrix without negative values
+    """
+    mask = adj._values() > 0
+    return torch.sparse_coo_tensor(adj._indices()[:, mask], adj._values()[mask], adj.size())
