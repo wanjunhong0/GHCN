@@ -4,7 +4,7 @@ from utils import normalize_adj, sparse_diag, eliminate_negative
 
 
 class Data():
-    def __init__(self, path, dataset, split, k):
+    def __init__(self, path, dataset, split, k, nodetrim, fusion):
         """Load dataset
            Preprocess feature, label, normalized adjacency matrix and train/val/test index
 
@@ -13,6 +13,8 @@ class Data():
             dataset (str): dataset name
             split (str): type of dataset split
             k (int) k-hop aggregation
+            nodetrim (bool) activate NodeTrim or not
+            fusion (str) type of fusion
         """
         if dataset == 'Reddit':
             data = Reddit(root=path + dataset)
@@ -36,14 +38,18 @@ class Data():
             adj = torch.sparse.mm(self.adjs[i], self.adj)
             self.adjs.append(torch.sparse_coo_tensor(adj._indices(), torch.ones_like(adj._values()), adj.size()))
 
-        self.adjs = NodeTrim(self.adjs, k)
+        if nodetrim:
+            self.adjs = NodeTrim(self.adjs, k)
         self.k = len(self.adjs)
-        self.node_rank = NodeRank(self.adjs, self.k)
+
+        if fusion == 'noderank':
+            self.node_rank = NodeRank(self.adjs, self.k)
         self.norm_adjs = [normalize_adj(i, symmetric=True) for i in self.adjs]
         self.feature_diffused = []
         for i in range(self.k):
             feature = torch.sparse.mm(self.norm_adjs[i], self.feature)
-            feature = torch.sparse.mm(sparse_diag(self.node_rank[i]), feature)
+            if fusion == 'noderank':
+                feature = torch.sparse.mm(sparse_diag(self.node_rank[i]), feature)
             self.feature_diffused.append(feature)
 
 
