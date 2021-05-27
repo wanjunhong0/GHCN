@@ -4,9 +4,10 @@ from utils import sparse_diag
 
 
 class KhopAttention(torch.nn.Module):
-    def __init__(self, n_hidden, k, share_weight=False):
+    def __init__(self, n_hidden, k, dropout, share_weight=False):
 
         super(KhopAttention, self).__init__()
+        self.dropout= dropout
         self.share_weight = share_weight
         if self.share_weight:
             self.W = torch.nn.Linear(n_hidden, 1)
@@ -25,6 +26,7 @@ class KhopAttention(torch.nn.Module):
                 attentions.append(F.leaky_relu(self.Ws[i](x)))
 
         attentions = torch.softmax(torch.cat(attentions, dim=1), dim=1)
+        attentions = F.dropout(attentions, self.dropout, training=self.training)
         for i, x in enumerate(xs):
             xs[i] = torch.sparse.mm(sparse_diag(attentions[:, i]), x)
 
