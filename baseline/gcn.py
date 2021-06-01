@@ -17,7 +17,7 @@ Configuation
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_path', type=str, default='./data/', help='Input data path')
 parser.add_argument('--model_path', type=str, default='checkpoint.pt', help='Saved model path.')
-parser.add_argument('--dataset', type=str, default='PubMed', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
+parser.add_argument('--dataset', type=str, default='Cora', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
 parser.add_argument('--split', type=str, default='full', help='The type of dataset split {public, full, random}')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--epoch', type=int, default=5000, help='Number of epochs to train')
