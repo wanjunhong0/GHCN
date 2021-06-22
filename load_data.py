@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid, Reddit
 from utils import normalize_adj, sparse_diag, eliminate_negative
 
@@ -33,64 +34,26 @@ class Data():
 
         self.adj = torch.sparse_coo_tensor(self.edge, torch.ones(self.n_edge), [self.n_node, self.n_node])
         self.adj = self.adj + sparse_diag(torch.ones(self.n_node))
-        self.adjs = [self.adj]
-        for i in range(k - 1):
-            adj = torch.sparse.mm(self.adjs[i], self.adj)
-            self.adjs.append(torch.sparse_coo_tensor(adj._indices(), torch.ones_like(adj._values()), adj.size()))
+        self.norm_adj = normalize_adj(self.adj, symmetric=True)
+        self.norm_adjs = [self.norm_adj]
+        for i in range(k-1):
+            adj = torch.sparse.mm(self.norm_adj, self.norm_adjs[i])
+            if nodetrim:
+                adj = NodeTrim(adj, self.norm_adjs[i])
+            self.norm_adjs.append(adj)
 
-        if nodetrim:
-            self.adjs = NodeTrim(self.adjs, k)
-        self.k = len(self.adjs)
 
-        if fusion == 'noderank':
-            self.node_rank = NodeRank(self.adjs, self.k)
-        self.norm_adjs = [normalize_adj(i, symmetric=True) for i in self.adjs]
-        self.feature_diffused = []
-        for i in range(self.k):
+        self.feature_diffused = [self.feature]
+        for i in range(k):
             feature = torch.sparse.mm(self.norm_adjs[i], self.feature)
-            if fusion == 'noderank':
-                feature = torch.sparse.mm(sparse_diag(self.node_rank[i]), feature)
             self.feature_diffused.append(feature)
 
 
-def NodeRank(adjs, k):
-    """Calculate NodeRank coefficients
+def NodeTrim(current, previous):
+    mask = torch.sparse_coo_tensor(previous._indices(), torch.ones(previous._nnz()), previous.size())
+    return torch.mul(current, mask)
 
-    Args:
-        adjs ([torch sparse tensor]): k-hop adj lists
-        k (int) k-hop aggregation
-
-    Returns:
-        torch tensor: NodeRank coefficients for k-hop adj lists
-    """
-    degree = torch.ones(adjs[0].size()[0]).unsqueeze(dim=0).to_sparse()
-    adjs = [normalize_adj(i, symmetric=False) for i in adjs]
-    node_rank = [torch.sparse.mm(degree, adjs[0])]
-    for i in range(1, k):
-        node_rank.append(torch.sparse.mm(node_rank[i - 1], adjs[i]))
-    node_rank = torch.softmax(torch.cat(node_rank, dim=0).to_dense(), dim=0)
-
-    return node_rank
-
-def NodeTrim(adjs, k):
-    """Remove nodes appeared in adjs
-
-    Args:
-        adjs ([torch sparse tensor]): k-hop adj lists
-        k (int) k-hop aggregation
-
-    Returns:
-        [torch sparse tensor]: k-hop adj lists after NodeTrim
-    """
-    adj_trimmed = []
-    for i in range(k):
-        adj = adjs[i]
-        for j in range(i):
-            adj = adj - adjs[j]
-        adj = eliminate_negative(adj)
-        if adj._nnz() == 0:
-            print('{}-hop NodeTrim adj matrix is empty!'.format(i + 1))
-            break
-        adj_trimmed.append(adj)
-
-    return adj_trimmed
+# def NodeTrim(current, previous):
+#     mask = (previous._indices() == current._indices().T.unsqueeze(-1)).all(1).any(1)
+#     adj = torch.sparse_coo_tensor(current._indices()[:, mask], current._values()[mask], current.size())
+#     return adj

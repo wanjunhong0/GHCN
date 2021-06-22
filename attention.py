@@ -4,26 +4,16 @@ from utils import sparse_diag
 
 
 class KhopAttention(torch.nn.Module):
-    def __init__(self, n_hidden, k, dropout, share_weight=False):
+    def __init__(self, n_hidden, k, dropout):
 
         super(KhopAttention, self).__init__()
         self.dropout= dropout
-        self.share_weight = share_weight
-        if self.share_weight:
-            self.W = torch.nn.Linear(n_hidden, 1)
-        else:
-            self.Ws = torch.nn.ModuleList()
-            for _ in range(k):
-                self.Ws.append(torch.nn.Linear(n_hidden, 1))
+        self.W = torch.nn.Linear(n_hidden, 1)
 
     def forward(self, xs):
         attentions = []
-        if self.share_weight:
-            for x in xs:
-                attentions.append(F.leaky_relu(self.W(x)))
-        else:
-            for i, x in enumerate(xs):
-                attentions.append(F.leaky_relu(self.Ws[i](x)))
+        for x in xs:
+            attentions.append(F.leaky_relu(self.W(x)))
 
         attentions = torch.softmax(torch.cat(attentions, dim=1), dim=1)
         attentions = F.dropout(attentions, self.dropout, training=self.training)

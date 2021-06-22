@@ -20,12 +20,12 @@ parser.add_argument('--model_path', type=str, default='checkpoint.pt', help='Sav
 parser.add_argument('--dataset', type=str, default='Cora', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
 parser.add_argument('--split', type=str, default='full', help='The type of dataset split {public, full, random}')
 parser.add_argument('--nodetrim', action='store_true', help='Trim ajds.')
-parser.add_argument('--fusion', type=str, default='noderank', help='Choose a dataset from {concat, attention, noderank}')
+parser.add_argument('--fusion', type=str, default='attention', help='Choose a dataset from {concat, attention}')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--epoch', type=int, default=1000, help='Number of epochs to train')
 parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 norm on parameters)')
-parser.add_argument('--k', type=int, default=3, help='k-hop aggregation')
+parser.add_argument('--k', type=int, default=10, help='k-hop aggregation')
 parser.add_argument('--hidden', type=int, default=64, help='Number of hidden units')
 parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate')
 parser.add_argument('--patience', type=int, default=100, help='How long to wait after last time validation improved')
@@ -61,7 +61,7 @@ Training
 """
 # Model and optimizer
 model = GNNplus(n_feature=data.n_feature, n_hidden=args.hidden, n_class=data.n_class,
-                k=data.k, dropout=args.dropout, fusion=args.fusion).to(device)
+                k=args.k, dropout=args.dropout, fusion=args.fusion).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 metric = torchmetrics.Accuracy().to(device)
 t_train = time.time()
