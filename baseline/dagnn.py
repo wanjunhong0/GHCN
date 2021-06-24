@@ -36,7 +36,7 @@ for arg in vars(args):
     print('{0} = {1}'.format(arg, getattr(args, arg)))
 torch.manual_seed(args.seed)
 # training on the first GPU if not available on CPU
-device = torch.device("cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Training on device = {}'.format(device))
 
 early_stop = EarlyStopping(patience=args.patience, mode='max', path=args.model_path)

@@ -4,7 +4,7 @@ from utils import sparse_diag
 
 
 class KhopAttention(torch.nn.Module):
-    def __init__(self, n_hidden, k, dropout):
+    def __init__(self, n_hidden, dropout):
 
         super(KhopAttention, self).__init__()
         self.dropout= dropout

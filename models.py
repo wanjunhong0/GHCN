@@ -24,7 +24,7 @@ class GNNplus(torch.nn.Module):
         for _ in range(self.k):
             self.Ws.append(torch.nn.Linear(n_feature, n_hidden))
         if self.fusion == 'attention':
-            self.attention = KhopAttention(n_hidden, k, dropout)
+            self.attention = KhopAttention(n_hidden, dropout)
         if self.fusion == 'concat':
             self.fc = torch.nn.Linear(k * n_hidden, n_class)
         else:

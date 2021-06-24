@@ -19,7 +19,7 @@ parser.add_argument('--data_path', type=str, default='./data/', help='Input data
 parser.add_argument('--model_path', type=str, default='checkpoint.pt', help='Saved model path.')
 parser.add_argument('--dataset', type=str, default='Cora', help='Choose a dataset from {Cora, CiteSeer, PubMed}')
 parser.add_argument('--split', type=str, default='full', help='The type of dataset split {public, full, random}')
-parser.add_argument('--nodetrim', action='store_true', help='Trim ajds.')
+parser.add_argument('--trim_prob', type=float, default=0.2, help='The probability to trim adj, 0 not trim, 1 trim')
 parser.add_argument('--fusion', type=str, default='attention', help='Choose a dataset from {concat, attention}')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--epoch', type=int, default=1000, help='Number of epochs to train')
@@ -27,7 +27,7 @@ parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rat
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 norm on parameters)')
 parser.add_argument('--k', type=int, default=10, help='k-hop aggregation')
 parser.add_argument('--hidden', type=int, default=64, help='Number of hidden units')
-parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate')
+parser.add_argument('--dropout', type=float, default=0.8, help='Dropout rate')
 parser.add_argument('--patience', type=int, default=100, help='How long to wait after last time validation improved')
 
 args = parser.parse_args()
@@ -46,7 +46,7 @@ Loading data
 """
 t_started = time.time()
 data = Data(path=args.data_path, dataset=args.dataset, split=args.split,
-            k=args.k, nodetrim=args.nodetrim, fusion=args.fusion)
+            k=args.k, prob=args.trim_prob)
 print('Loaded {0} dataset with {1} nodes and {2} edges'.format(args.dataset, data.n_node, data.n_edge))
 feature = [i.to(device) for i in data.feature_diffused]
 label = data.label.to(device)
