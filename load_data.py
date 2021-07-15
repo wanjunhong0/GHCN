@@ -1,6 +1,6 @@
 import torch
 from torch_geometric.datasets import Planetoid, Reddit
-from utils import normalize_adj, sparse_diag
+from utils import normalize_adj, sparse_diag, eliminate_negative
 
 
 class Data():
@@ -50,4 +50,4 @@ class Data():
 
 def NodeTrim(current, previous):
     mask = torch.sparse_coo_tensor(previous._indices(), torch.ones(previous._nnz()), previous.size())
-    return torch.mul(current, mask)
+    return eliminate_negative(current - torch.mul(current, mask))
