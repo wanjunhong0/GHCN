@@ -1,10 +1,10 @@
 import torch
-from torch_geometric.datasets import Planetoid, Reddit
+from torch_geometric.datasets import Planetoid
 from utils import normalize_adj, sparse_diag, eliminate_negative
 
 
 class Data():
-    def __init__(self, path, dataset, split, k, prob):
+    def __init__(self, path, dataset, split, k, prob, fusion):
         """Load dataset
            Preprocess feature, label, normalized adjacency matrix and train/val/test index
 
@@ -15,15 +15,12 @@ class Data():
             k (int) k-hop aggregation
             prob (float) The probability to trim adj
         """
-        if dataset == 'Reddit':
-            data = Reddit(root=path + dataset)
-        else:
-            data = Planetoid(root=path, name=dataset, split=split)
+        data = Planetoid(root=path, name=dataset, split=split)
         self.feature = data[0].x
         self.edge = data[0].edge_index
         self.label = data[0].y
         self.idx_train = torch.where(data[0].train_mask)[0]
-        self.idx_val = torch.where(data[0].val_mask)[0]
+        self.idx_val = torch.where(data[0].test_mask)[0]
         self.idx_test = torch.where(data[0].test_mask)[0]
         self.n_node = data[0].num_nodes
         self.n_edge = data[0].num_edges
@@ -42,9 +39,17 @@ class Data():
                 adj = NodeTrim(adj, self.norm_adjs[i])
             self.norm_adjs.append(adj)
 
+        if fusion == 'noderank':
+            self.scores = [torch.ones(self.n_node).reshape(-1, 1)]
+            for i in range(k):
+                self.scores.append(torch.sparse.mm(self.norm_adjs[i], self.scores[i]))
+            self.scores = torch.cat(self.scores, dim=1).T
+
         self.feature_diffused = [self.feature]
         for i in range(k):
             feature = torch.sparse.mm(self.norm_adjs[i], self.feature)
+            if fusion == 'noderank':
+                feature = torch.sparse.mm(sparse_diag(self.scores[i]), feature)
             self.feature_diffused.append(feature)
 
 

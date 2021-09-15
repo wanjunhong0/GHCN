@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
-from attention import KhopAttention
+from fusion import AdaptiveFusion
 
 
-class GNNplus(torch.nn.Module):
+class GHCN(torch.nn.Module):
     def __init__(self, n_feature, n_hidden, n_class, k, dropout, fusion):
         """
         Args:
@@ -14,7 +14,7 @@ class GNNplus(torch.nn.Module):
             dropout (float): dropout rate
             fusion (str) type of fusion
         """
-        super(GNNplus, self).__init__()
+        super(GHCN, self).__init__()
 
         self.k = k
         self.dropout = dropout
@@ -23,8 +23,8 @@ class GNNplus(torch.nn.Module):
         self.Ws = torch.nn.ModuleList()
         for _ in range(self.k):
             self.Ws.append(torch.nn.Linear(n_feature, n_hidden))
-        if self.fusion == 'attention':
-            self.attention = KhopAttention(n_hidden, dropout)
+        if self.fusion == 'adaptive':
+            self.attention = AdaptiveFusion(n_hidden, dropout)
         if self.fusion == 'concat':
             self.fc = torch.nn.Linear(k * n_hidden, n_class)
         else:
@@ -47,7 +47,7 @@ class GNNplus(torch.nn.Module):
 
         if self.fusion == 'noderank':
             out = torch.sum(torch.stack(xs), dim=0)
-        elif self.fusion == 'attention':
+        elif self.fusion == 'adaptive':
             out = self.attention(xs)
         elif self.fusion == 'concat':
             out = torch.cat(xs, dim=1)

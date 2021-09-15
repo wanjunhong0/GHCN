@@ -3,17 +3,17 @@ import torch.nn.functional as F
 from utils import sparse_diag
 
 
-class KhopAttention(torch.nn.Module):
+class AdaptiveFusion(torch.nn.Module):
     def __init__(self, n_hidden, dropout):
 
-        super(KhopAttention, self).__init__()
+        super(AdaptiveFusion, self).__init__()
         self.dropout= dropout
-        self.W = torch.nn.Linear(n_hidden, 1)
+        self.alpha = torch.nn.Linear(n_hidden, 1)
 
     def forward(self, xs):
         attentions = []
         for x in xs:
-            attentions.append(F.leaky_relu(self.W(x)))
+            attentions.append(F.leaky_relu(self.alpha(x)))
 
         attentions = torch.softmax(torch.cat(attentions, dim=1), dim=1)
         attentions = F.dropout(attentions, self.dropout, training=self.training)
